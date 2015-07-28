@@ -126,7 +126,7 @@ namespace ursa
     void loadPrevSettings();
     void setNoSave();  //dont save HV to EEPROM
     void setVoltage(int voltage);  //EEPROM
-    void setGain(int gain); //EEPROM
+    void setGain(double gain); //EEPROM
     void setInput(inputs input); //EEPROM
     void setShapingTime(shaping_time time);  //EEPROM
     void setThresholdOffset(int mVolts);  //EEPROM

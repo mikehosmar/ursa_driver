@@ -29,7 +29,7 @@ SOFTWARE.
 
 
 int main (int argc, char **argv) {
-  std::string port = "/dev/ttyACM0";
+  std::string port = "/dev/pts/7";
   int32_t baud = 115200;
   boost::array<unsigned int, 4096>  array;
 
@@ -40,12 +40,12 @@ int main (int argc, char **argv) {
   if(ursa.connected()) std::cout << "YAY" << std::endl;
   else
     return (-1);
-  ursa.startAcquire();
-
+//  ursa.startAcquire();
+  ursa.requestSerialNumber();
   while(1){
-ursa.read();
-ursa.getPulses(&array);
-std::cout << boost::lexical_cast<std::string>(array[0]) << std::endl;
+//ursa.read();
+//ursa.getPulses(&array);
+//std::cout << boost::lexical_cast<std::string>(array[0]) << std::endl;
 sleep(1);
   }
 }

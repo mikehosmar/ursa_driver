@@ -100,7 +100,6 @@ namespace ursa
 #ifdef DEBUG_
     std::cout << "Transmitting:" << tx_buffer_.str() << std::endl;
 #endif
-    tx_buffer_ << eol;
     ssize_t bytes_written = serial_->write(tx_buffer_.str());
     if (bytes_written < tx_buffer_.tellp())
     {
@@ -302,10 +301,51 @@ namespace ursa
     }
   }
 
-  void Interface::setGain(int gain) {
+  void Interface::setGain(double gain) {
     if (!acquiring_)
     {
-      tx_buffer_ << "C" << "F";
+      char coarse;
+
+      unsigned char fine;
+      if (gain < 2)
+      {
+        coarse = '0';
+        fine = (gain / 2)*256-1;
+      }
+      else if (gain < 4)
+      {
+        coarse = '1';
+        fine = (gain / 4)*256-1;
+      }
+      else if (gain < 15)
+      {
+        coarse = '2';
+        fine = (gain / 15)*256-1;
+      }
+      else if (gain < 35)
+      {
+        coarse = '3';
+        fine = (gain / 35)*256-1;
+      }
+      else if (gain < 125)
+      {
+        coarse = '4';
+        fine = (gain / 125)*256-1;
+      }
+      else if (gain < 250)
+      {
+        coarse = '5';
+        fine = (gain / 250)*256-1;
+      }
+      else
+      {
+        std::cout << "ERROR: Gain must be bellow 250x" << std::endl;
+        return;
+      }
+
+      double confirmGain = ((double (fine)+1)/256);
+      std::cout << "INFO: Setting fine gain to: " << boost::lexical_cast<double>(confirmGain) << std::endl;
+      tx_buffer_ << "C" << coarse << "F" << fine;
       transmit();
     }
   }
@@ -336,7 +376,7 @@ namespace ursa
   void Interface::setBitMode(int bits) {
     if (!acquiring_ && bits >= 8 && bits <= 12)
     {
-      tx_buffer_ << "S" << boost::lexical_cast<std::string>(13 - bits);
+      tx_buffer_ << "M" << boost::lexical_cast<std::string>(13 - bits);
       transmit();
     }
     else
