@@ -58,8 +58,10 @@ namespace ursa
 
     float battV;
 
+    int ramp_;
+
     boost::mutex array_mutex_;
-    boost::array<unsigned int, 4096> pulses_;
+    boost::array<uint, 4096> pulses_;
 
     bool checkComms();
     void transmit();
@@ -101,7 +103,7 @@ namespace ursa
 
     void startASCII();
     void stopASCII();
-    void requestSerialNumber();
+    int requestSerialNumber();
     void setSerialNumber(int serial);  //Factory only
     void setSmudgeFactor(int smudge);  //factory only
 

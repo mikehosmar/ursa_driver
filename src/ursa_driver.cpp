@@ -43,6 +43,8 @@ namespace ursa
   }
 
   Interface::~Interface() {
+    tx_buffer_ << "R" << "v";
+    transmit();
   }
 
   void Interface::connect() {
@@ -75,7 +77,7 @@ namespace ursa
         else
         {
           connected_ = false;
-          std::cout << "Unable to connect to serial port:" << port_
+          std::cout << "WARN: Unable to connect to serial port:" << port_
               << std::endl;
         }
       }
@@ -90,23 +92,24 @@ namespace ursa
       else
       {
         responsive_ = false;
-        std::cout << "URSA not responding." << std::endl;
+        std::cout << "WARN: URSA not responding." << std::endl;
       }
     }
-    std::cout << "Unable to communicate with URSA" << std::endl;
+    std::cout << "ERROR: Unable to communicate with URSA" << std::endl;
   }
 
   void Interface::transmit() {
 #ifdef DEBUG_
-    std::cout << "Transmitting:" << tx_buffer_.str() << std::endl;
+    std::cout << "DEBUG: Transmitting:" << tx_buffer_.str() << std::endl;
 #endif
     ssize_t bytes_written = serial_->write(tx_buffer_.str());
     if (bytes_written < tx_buffer_.tellp())
     {
-      std::cout << "Serial write timeout, " << bytes_written
+      std::cout << "ERROR: Serial write timeout, " << bytes_written
           << " bytes written of " << tx_buffer_.tellp() << "." << std::endl;
     }
     tx_buffer_.str("");
+    usleep(100000);  //for stability
   }
 
   void Interface::read() {
@@ -118,7 +121,7 @@ namespace ursa
       //std::cout<< "RX: " << reinterpret_cast<const char*>(temp) << std::endl;
     }
 #ifdef DEBUG_
-    std::cout << "Buffer Size: " << rx_buffer_.size() << std::endl;
+    std::cout << "DEBUG: Receive buffer size: " << rx_buffer_.size() << std::endl;
 #endif
     processData();
   }
@@ -144,12 +147,17 @@ namespace ursa
         else
         {
           boost::lock_guard<boost::mutex> lock(array_mutex_);
-          pulses_[energy] += count >> 2; //I think the docs were wrong and this is the correct method
+#ifdef DEBUG_
+          std::cout << "DEBUG: Incrementing Bin: "
+              << boost::lexical_cast<std::string>(energy) << " By amount: "
+              << boost::lexical_cast<std::string>(count >> 2) << std::endl;
+#endif
+          pulses_[energy] += (count >> 2); //I think the docs were wrong and this is the correct method
         }       //this will increment by the highest 4 bits of the original 16
       }
       else      //the stream should start with a 0xFF for each read
       {
-        std::cout << "Read error, dropping chars:" << (int) rx_buffer_.front();
+        std::cout << "ERROR: Read error, dropping chars:" << (int) rx_buffer_.front();
         rx_buffer_.pop_front();
         while (rx_buffer_.front() != 0xff && rx_buffer_.size() > 0)
         {
@@ -206,19 +214,25 @@ namespace ursa
   }
 
   void Interface::startGM() {
-    tx_buffer_ << "J";
-    transmit();
-    gmMode_ = true;
+    if (!acquiring_)
+    {
+      tx_buffer_ << "J";
+      transmit();
+      gmMode_ = true;
+      startAcquire();
+    }
   }
 
   void Interface::stopGM() {
+    if (acquiring_)
+      stopAcquire();
     tx_buffer_ << "j";
     transmit();
     gmMode_ = false;
   }
 
   void Interface::requestCounts() {
-    if (gmMode_)
+    if (gmMode_ && acquiring_)
     {
       tx_buffer_ << "c";
       transmit();
@@ -251,26 +265,36 @@ namespace ursa
     }
   }
 
-  void Interface::requestSerialNumber() {
+  int Interface::requestSerialNumber() {
     if (!acquiring_)
     {
       tx_buffer_ << "@";
       transmit();
+      usleep(50000);
+      std::string msg = serial_->readline(max_line_length, eol);
+      boost::trim(msg);
+      std::cout << "INFO: The serial number is: " << msg << std::endl;
+      return (boost::lexical_cast<int>(msg.c_str()));
     }
+    else
+      return (-1);
   }
 
   void Interface::setSerialNumber(int serial) {
-    if (!acquiring_ && serial >= 20000 && serial <= 29999)
+    if (!acquiring_ && serial >= 200000 && serial <= 299999)
     {
-      tx_buffer_ << "#" << boost::lexical_cast<std::string>(serial);
+      tx_buffer_ << "#";
       transmit();
+      tx_buffer_ << boost::lexical_cast<std::string>(serial);
+      transmit();
+      sleep(3);
     }
     else
-      std::cout << "ERROR: Serial must be between 20000 and 29999" << std::endl;
+      std::cout << "ERROR: Serial must be between 200000 and 299999" << std::endl;
   }
 
   void Interface::setSmudgeFactor(int smudge) {
-    if (!acquiring_ && smudge >= 0 && smudge)
+    if (!acquiring_ && smudge >= 0 && smudge <= 4)
     {
       tx_buffer_ << "X" << boost::lexical_cast<std::string>(smudge);
       transmit();
@@ -282,6 +306,14 @@ namespace ursa
     {
       tx_buffer_ << "r";
       transmit();
+      //This sets HV so we need to wait for ramp
+      sleep(5);
+      while (!serial_->waitReadable())
+      {
+        tx_buffer_ << "B";
+        transmit();
+      }
+      std::string msg = serial_->readline(max_line_length, eol);
     }
   }
 
@@ -296,9 +328,25 @@ namespace ursa
   void Interface::setVoltage(int voltage) {
     if (!acquiring_ && voltage >= 0 && voltage <= 2000)
     {
-      tx_buffer_ << "V";
+      if (voltage == 0)
+        setNoSave();
+      uint16_t outVolts = 0;
+      outVolts = round(double(voltage) / 2000 * 65532);
+      tx_buffer_ << "V" << (uint8_t) (outVolts >> 8)
+          << (uint8_t) (outVolts & 0xff);
       transmit();
+      // blocking call to serial to wait for responsiveness
+      sleep(5);
+      while (!serial_->waitReadable())
+      {
+        tx_buffer_ << "B";
+        transmit();
+      }
+      std::string msg = serial_->readline(max_line_length, eol);
     }
+    else
+      std::cout << "ERROR: Voltage must be between 0 and 2000 volts"
+          << std::endl;
   }
 
   void Interface::setGain(double gain) {
@@ -306,36 +354,36 @@ namespace ursa
     {
       char coarse;
 
-      unsigned char fine;
+      uint8_t fine;
       if (gain < 2)
       {
         coarse = '0';
-        fine = (gain / 2)*256-1;
+        fine = round((gain / 2) * 256 - 1);
       }
       else if (gain < 4)
       {
         coarse = '1';
-        fine = (gain / 4)*256-1;
+        fine = round((gain / 4) * 256 - 1);
       }
       else if (gain < 15)
       {
         coarse = '2';
-        fine = (gain / 15)*256-1;
+        fine = round((gain / 15) * 256 - 1);
       }
       else if (gain < 35)
       {
         coarse = '3';
-        fine = (gain / 35)*256-1;
+        fine = round((gain / 35) * 256 - 1);
       }
       else if (gain < 125)
       {
         coarse = '4';
-        fine = (gain / 125)*256-1;
+        fine = round((gain / 125) * 256 - 1);
       }
       else if (gain < 250)
       {
         coarse = '5';
-        fine = (gain / 250)*256-1;
+        fine = round((gain / 250) * 256 - 1);
       }
       else
       {
@@ -343,8 +391,9 @@ namespace ursa
         return;
       }
 
-      double confirmGain = ((double (fine)+1)/256);
-      std::cout << "INFO: Setting fine gain to: " << boost::lexical_cast<double>(confirmGain) << std::endl;
+      double confirmGain = ((double(fine) + 1) / 256);
+      std::cout << "INFO: Setting fine gain to: "
+          << boost::lexical_cast<std::string>(confirmGain) << std::endl;
       tx_buffer_ << "C" << coarse << "F" << fine;
       transmit();
     }
@@ -386,10 +435,11 @@ namespace ursa
   void Interface::setRamp(int seconds) {
     if (!acquiring_ && seconds >= 6 && seconds <= 219)
     {
-      int ramp = round((seconds * 303.45) - 1197);
+      ramp_ = seconds;
+      uint16_t ramp = round((seconds * 303.45) - 1197);
       if (ramp > 16383)
         ramp = 16838;
-      tx_buffer_ << "P" << boost::lexical_cast<std::string>(ramp);
+      tx_buffer_ << "P" << (uint8_t) (ramp >> 8) << (uint8_t) (ramp & 0xFF);
       transmit();
     }
     else
