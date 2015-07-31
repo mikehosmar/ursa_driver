@@ -1,32 +1,33 @@
 /**
-The MIT License (MIT)
+ The MIT License (MIT)
 
-\file      ursa_driver.h
-\authors   Mike Hosmar <mikehosmar@gmail.com>
-\copyright Copyright (c) 2015, Michael Hosmar, All rights reserved.
+ \file      ursa_driver.h
+ \authors   Mike Hosmar <mikehosmar@gmail.com>
+ \copyright Copyright (c) 2015, Michael Hosmar, All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
  */
 
 #ifndef URSA_DRIVER_H_
 #define URSA_DRIVER_H_
 #define DEBUG_
+#define ADMIN_
 
 #include <boost/lexical_cast.hpp>
 #include <boost/array.hpp>
@@ -73,7 +74,7 @@ namespace ursa
     ~Interface();
 
     void read();
-    void getPulses(boost::array<unsigned int, 4096>* array);
+    void getSpectra(boost::array<unsigned int, 4096>* array);
 
     void connect();
     bool connected() {
@@ -104,9 +105,12 @@ namespace ursa
     void startASCII();
     void stopASCII();
     int requestSerialNumber();
+    void requestMaxHV();
+#ifdef ADMIN_
     void setSerialNumber(int serial);  //Factory only
     void setSmudgeFactor(int smudge);  //factory only
-
+    void setMaxHV(int HV);
+#endif
     enum inputs
     {
       INPUT1NEG = 0, INPUT1POS, INPUT2NEG, INPUT2POS, INPUTXPOS //INPUTXPOS either input positive

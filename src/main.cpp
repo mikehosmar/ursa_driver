@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   int32_t baud = 115200;
   boost::array<unsigned int, 4096> array;
   std::ofstream myfile;
-  myfile.open("output.csv");
+  myfile.open("outputwith90s.csv");
 
   ursa::Interface * ursa = new ursa::Interface(port.c_str(), baud);
 
@@ -43,25 +43,34 @@ int main(int argc, char **argv) {
     std::cout << "YAY" << std::endl;
   else
     return (-1);
+
+  //ursa->setMaxHV(2000);
+  //sleep(3);
+  //ursa->requestMaxHV();
+  //sleep(20);
   //ursa.setSerialNumber(200119);
   ursa->requestSerialNumber();
-  ursa->loadPrevSettings();
+  //ursa->loadPrevSettings();
   ursa->setGain(25.293);
+  ursa->setThresholdOffset(100);
+  ursa->setInput(ursa::Interface::INPUT1NEG);
+
   ursa->setRamp(6);
   ursa->setVoltage(900);
+  //sleep(20);
 //  sleep(5);
 //  ursa.setVoltage(0);
 //  sleep(60);
   ursa->startAcquire();
 
-  for (int i = 0; i < 20; i++)
+  for (int i = 0; i < 90; i++)
   {
     ursa->read();
     sleep(1);
   }
   ursa->stopAcquire();
   ursa->read();
-  ursa->getPulses(&array);
+  ursa->getSpectra(&array);
 //std::cout << boost::lexical_cast<std::string>(array[0]) << std::endl;
   for (boost::array<unsigned int, 4096>::iterator i = array.begin();
       i != array.end(); i++)
@@ -70,6 +79,7 @@ int main(int argc, char **argv) {
     //usleep(200000);
   }
   myfile.close();
+  sleep(10);
   ursa->setVoltage(0);
 
 }

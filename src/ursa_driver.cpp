@@ -121,7 +121,8 @@ namespace ursa
       //std::cout<< "RX: " << reinterpret_cast<const char*>(temp) << std::endl;
     }
 #ifdef DEBUG_
-    std::cout << "DEBUG: Receive buffer size: " << rx_buffer_.size() << std::endl;
+    std::cout << "DEBUG: Receive buffer size: " << rx_buffer_.size()
+        << std::endl;
 #endif
     processData();
   }
@@ -157,7 +158,8 @@ namespace ursa
       }
       else      //the stream should start with a 0xFF for each read
       {
-        std::cout << "ERROR: Read error, dropping chars:" << (int) rx_buffer_.front();
+        std::cout << "ERROR: Read error, dropping chars:"
+            << (int) rx_buffer_.front();
         rx_buffer_.pop_front();
         while (rx_buffer_.front() != 0xff && rx_buffer_.size() > 0)
         {
@@ -169,7 +171,7 @@ namespace ursa
     }
   }
 
-  void Interface::getPulses(boost::array<unsigned int, 4096>* array) {
+  void Interface::getSpectra(boost::array<unsigned int, 4096>* array) {
     boost::lock_guard<boost::mutex> lock(array_mutex_);
     *array = pulses_;
   }
@@ -280,6 +282,19 @@ namespace ursa
       return (-1);
   }
 
+  void Interface::requestMaxHV() {
+    if (!acquiring_)
+    {
+      tx_buffer_ << "2";
+      transmit();
+      usleep(50000);
+      std::string msg = serial_->readline(max_line_length, eol);
+      boost::trim(msg);
+      std::cout << "INFO: The max HV is: " << msg << std::endl;
+    }
+  }
+
+#ifdef ADMIN_
   void Interface::setSerialNumber(int serial) {
     if (!acquiring_ && serial >= 200000 && serial <= 299999)
     {
@@ -290,7 +305,8 @@ namespace ursa
       sleep(3);
     }
     else
-      std::cout << "ERROR: Serial must be between 200000 and 299999" << std::endl;
+      std::cout << "ERROR: Serial must be between 200000 and 299999"
+          << std::endl;
   }
 
   void Interface::setSmudgeFactor(int smudge) {
@@ -301,6 +317,20 @@ namespace ursa
     }
   }
 
+  //This function should NOT be used
+  void Interface::setMaxHV(int HV) {
+    if (!acquiring_ && HV >= 0 && HV <= 10000)
+    {
+      tx_buffer_ << "t";
+      transmit();
+      tx_buffer_ << char(HV >> 8) << char(HV & 0xFF);
+      transmit();
+      sleep(3);
+    }
+  }
+
+#endif
+
   void Interface::loadPrevSettings() {
     if (!acquiring_)
     {
@@ -308,12 +338,13 @@ namespace ursa
       transmit();
       //This sets HV so we need to wait for ramp
       sleep(5);
+      std::string msg = serial_->readline(max_line_length, eol);
       while (!serial_->waitReadable())
       {
         tx_buffer_ << "B";
         transmit();
       }
-      std::string msg = serial_->readline(max_line_length, eol);
+      msg = serial_->readline(max_line_length, eol);
     }
   }
 
@@ -337,12 +368,13 @@ namespace ursa
       transmit();
       // blocking call to serial to wait for responsiveness
       sleep(5);
+      std::string msg = serial_->readline(max_line_length, eol);
       while (!serial_->waitReadable())
       {
         tx_buffer_ << "B";
         transmit();
       }
-      std::string msg = serial_->readline(max_line_length, eol);
+      msg = serial_->readline(max_line_length, eol);
     }
     else
       std::cout << "ERROR: Voltage must be between 0 and 2000 volts"
@@ -416,10 +448,26 @@ namespace ursa
   }
 
   void Interface::setThresholdOffset(int mVolts) {
-    if (!acquiring_)
+    if (!acquiring_ && mVolts >= 25 && mVolts <= 1023)
     {
+      uint16_t min_offset = 50;
+      uint16_t thresh = mVolts * 2;
+      uint16_t offset = 0;
+      if (mVolts > min_offset * 2)
+      {
+        offset = mVolts;  //offset = mV/2 *2
+      }
+      else
+        offset = min_offset * 2;
 
+      tx_buffer_ << "T" << (unsigned char) ((thresh >> 4) & 0xFF)
+          << (unsigned char) (((thresh & 0x0F) << 4) | ((offset >> 8) & 0x0F))
+          << (unsigned char) (offset & 0xFF);
+      transmit();
     }
+    else
+      std::cout << "ERROR: Threshold must be between 25 and 1024 mV"
+          << std::endl;
   }
 
   void Interface::setBitMode(int bits) {
