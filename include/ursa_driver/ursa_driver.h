@@ -26,7 +26,7 @@
 
 #ifndef URSA_DRIVER_H_
 #define URSA_DRIVER_H_
-#define DEBUG_
+#undef DEBUG_
 #define ADMIN_
 
 #include <boost/lexical_cast.hpp>
@@ -60,6 +60,7 @@ namespace ursa
     float battV;
 
     int ramp_;
+    int voltage_;
 
     boost::mutex array_mutex_;
     boost::array<uint, 4096> pulses_;
@@ -75,6 +76,7 @@ namespace ursa
 
     void read();
     void getSpectra(boost::array<unsigned int, 4096>* array);
+    void clearSpectra();
 
     void connect();
     bool connected() {
@@ -97,7 +99,7 @@ namespace ursa
 
     void startGM();
     void stopGM();
-    void requestCounts(); //only in GM mode
+    uint32_t requestCounts(); //only in GM mode
 
     void stopVoltage();
     void requestBatt(); //can be active
@@ -108,7 +110,7 @@ namespace ursa
     void requestMaxHV();
 #ifdef ADMIN_
     void setSerialNumber(int serial);  //Factory only
-    void setSmudgeFactor(int smudge);  //factory only
+    void setSmudgeFactor(int smudge);  //Factory only
     void setMaxHV(int HV);
 #endif
     enum inputs

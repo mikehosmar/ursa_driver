@@ -33,12 +33,12 @@
 
 namespace ursa
 {
-  const std::string eol("\n");
-  const size_t max_line_length(128);
+  const size_t max_line_length(64);
 
   Interface::Interface(const char *port, int baud) :
       port_(port), baud_(baud), connected_(false), serial_(NULL), acquiring_(
-          false), responsive_(false), gmMode_(false), battV(0) {
+          false), responsive_(false), gmMode_(false), battV(0), ramp_(6), voltage_(
+          0) {
     pulses_.fill(0);
   }
 
@@ -127,11 +127,12 @@ namespace ursa
     processData();
   }
   void Interface::processData() {
+
     while (rx_buffer_.size() >= 3)
     {
       if (rx_buffer_.front() == 0xff)
       {
-        rx_buffer_.pop_front();        //drop the first byte it is only for sync
+        rx_buffer_.pop_front();      //drop the first byte it is only for sync
         uint8_t char1, char2, count;
         uint16_t energy;
 
@@ -176,6 +177,11 @@ namespace ursa
     *array = pulses_;
   }
 
+  void Interface::clearSpectra() {
+    boost::lock_guard<boost::mutex> lock(array_mutex_);
+    pulses_.fill(0);
+  }
+
   void Interface::processBatt(uint16_t input) {
     battV = input * 12 / 1024;
   }
@@ -185,8 +191,7 @@ namespace ursa
     serial_->flush();
     tx_buffer_ << "U";
     transmit();
-    serial_->waitReadable();
-    std::string msg = serial_->readline(max_line_length, eol);
+    std::string msg = serial_->read(max_line_length);
     boost::trim(msg);
     if (msg == "URSA2")
       return (true);
@@ -197,7 +202,8 @@ namespace ursa
   void Interface::stopAcquire() {
     do
     {
-      std::string ignored = serial_->read(max_line_length);
+      if (serial_->available())
+        std::string ignored = serial_->read(max_line_length);
       tx_buffer_ << "R";
       transmit();
       usleep(500);
@@ -213,6 +219,8 @@ namespace ursa
       transmit();
       acquiring_ = true;
     }
+    else
+      std::cout << "WARNING: Already acquiring" << std::endl;
   }
 
   void Interface::startGM() {
@@ -223,6 +231,8 @@ namespace ursa
       gmMode_ = true;
       startAcquire();
     }
+    else
+      std::cout << "WARNING: Already acquiring" << std::endl;
   }
 
   void Interface::stopGM() {
@@ -233,12 +243,30 @@ namespace ursa
     gmMode_ = false;
   }
 
-  void Interface::requestCounts() {
+  uint32_t Interface::requestCounts() {
     if (gmMode_ && acquiring_)
     {
+      uint8_t temp_buffer[10];
+      uint8_t count = 0;
       tx_buffer_ << "c";
       transmit();
+      serial_->waitReadable();
+      if (serial_->available() <= 4)
+      {
+        count = serial_->read(temp_buffer, 4);
+        if (count == 4)
+        {
+          return (((uint32_t) temp_buffer[0] << 24)
+              | ((uint32_t) temp_buffer[1] << 16)
+              | ((uint32_t) temp_buffer[2] << 8) | ((uint32_t) temp_buffer[3]));
+        }
+      }
+      std::cout << "ERROR: Did not receive correct number of bytes"
+          << std::endl;
+      return (0);
     }
+    else
+      std::cout << "ERROR: Either not aquiring or not in GM mode." << std::endl;
   }
 
   void Interface::stopVoltage() {
@@ -257,6 +285,9 @@ namespace ursa
       tx_buffer_ << "A";
       transmit();
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to switch ASCII mode."
+          << std::endl;
   }
 
   void Interface::stopASCII() {
@@ -265,6 +296,9 @@ namespace ursa
       tx_buffer_ << "N";
       transmit();
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to switch ASCII mode."
+          << std::endl;
   }
 
   int Interface::requestSerialNumber() {
@@ -273,13 +307,17 @@ namespace ursa
       tx_buffer_ << "@";
       transmit();
       usleep(50000);
-      std::string msg = serial_->readline(max_line_length, eol);
+      std::string msg = serial_->read(max_line_length);
       boost::trim(msg);
       std::cout << "INFO: The serial number is: " << msg << std::endl;
       return (boost::lexical_cast<int>(msg.c_str()));
     }
     else
+    {
+      std::cout << "ERROR: Acquiring. Stop acquiring to switch ASCII mode."
+          << std::endl;
       return (-1);
+    }
   }
 
   void Interface::requestMaxHV() {
@@ -288,10 +326,13 @@ namespace ursa
       tx_buffer_ << "2";
       transmit();
       usleep(50000);
-      std::string msg = serial_->readline(max_line_length, eol);
+      std::string msg = serial_->read(max_line_length);
       boost::trim(msg);
       std::cout << "INFO: The max HV is: " << msg << std::endl;
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to request Max HV."
+          << std::endl;
   }
 
 #ifdef ADMIN_
@@ -305,7 +346,8 @@ namespace ursa
       sleep(3);
     }
     else
-      std::cout << "ERROR: Serial must be between 200000 and 299999"
+      std::cout
+          << "ERROR: Serial must be between 200000 and 299999 and the system must not be acquiring."
           << std::endl;
   }
 
@@ -315,9 +357,13 @@ namespace ursa
       tx_buffer_ << "X" << boost::lexical_cast<std::string>(smudge);
       transmit();
     }
+    else
+      std::cout
+          << "ERROR: Smudge factor must be between 0 and 4 and the system must not be acquiring."
+          << std::endl;
   }
 
-  //This function should NOT be used
+  //This function must NOT be used
   void Interface::setMaxHV(int HV) {
     if (!acquiring_ && HV >= 0 && HV <= 10000)
     {
@@ -327,8 +373,10 @@ namespace ursa
       transmit();
       sleep(3);
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to change max HV."
+          << std::endl;
   }
-
 #endif
 
   void Interface::loadPrevSettings() {
@@ -337,15 +385,17 @@ namespace ursa
       tx_buffer_ << "r";
       transmit();
       //This sets HV so we need to wait for ramp
-      sleep(5);
-      std::string msg = serial_->readline(max_line_length, eol);
+      std::string msg = serial_->read(max_line_length);
       while (!serial_->waitReadable())
       {
         tx_buffer_ << "B";
         transmit();
       }
-      msg = serial_->readline(max_line_length, eol);
+      msg = serial_->read(max_line_length);
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to load settings."
+          << std::endl;
   }
 
   void Interface::setNoSave() {
@@ -354,11 +404,15 @@ namespace ursa
       tx_buffer_ << "d";
       transmit();
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to disable EEPROM saving."
+          << std::endl;
   }
 
   void Interface::setVoltage(int voltage) {
     if (!acquiring_ && voltage >= 0 && voltage <= 2000)
     {
+
       if (voltage == 0)
         setNoSave();
       uint16_t outVolts = 0;
@@ -366,18 +420,24 @@ namespace ursa
       tx_buffer_ << "V" << (uint8_t) (outVolts >> 8)
           << (uint8_t) (outVolts & 0xff);
       transmit();
+      //calculate seconds for ramp then adjust for the loop taking 1.1 seconds
+            int seconds = (ramp_ * abs(voltage-voltage_) / 100) / 1.1;
       // blocking call to serial to wait for responsiveness
-      sleep(5);
-      std::string msg = serial_->readline(max_line_length, eol);
+      std::string msg = serial_->read(max_line_length);
       while (!serial_->waitReadable())
       {
+        std::cout << "INFO: Ramping HV to: " << voltage << " Aprox. Seconds Remaining: " << seconds
+            << std::endl;
+        seconds--;
         tx_buffer_ << "B";
         transmit();
       }
-      msg = serial_->readline(max_line_length, eol);
+      msg = serial_->read(max_line_length);
+      voltage_=voltage;
     }
     else
-      std::cout << "ERROR: Voltage must be between 0 and 2000 volts"
+      std::cout
+          << "ERROR: Voltage must be between 0 and 2000 volts and the system must not be acquiring"
           << std::endl;
   }
 
@@ -385,7 +445,6 @@ namespace ursa
     if (!acquiring_)
     {
       char coarse;
-
       uint8_t fine;
       if (gain < 2)
       {
@@ -429,14 +488,22 @@ namespace ursa
       tx_buffer_ << "C" << coarse << "F" << fine;
       transmit();
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to change gain."
+          << std::endl;
   }
 
   void Interface::setInput(inputs input) {
     if (!acquiring_)
     {
+      setVoltage(0);
       tx_buffer_ << "I" << boost::lexical_cast<std::string>(input);
       transmit();
     }
+    else
+      std::cout
+          << "ERROR: Acquiring. Stop acquiring to switch inputs or polarity."
+          << std::endl;
   }
 
   void Interface::setShapingTime(shaping_time time) {
@@ -445,6 +512,9 @@ namespace ursa
       tx_buffer_ << "S" << boost::lexical_cast<std::string>(time);
       transmit();
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to change shaping time."
+          << std::endl;
   }
 
   void Interface::setThresholdOffset(int mVolts) {
@@ -466,7 +536,8 @@ namespace ursa
       transmit();
     }
     else
-      std::cout << "ERROR: Threshold must be between 25 and 1024 mV"
+      std::cout
+          << "ERROR: Threshold must be between 25 and 1024 mV and the system must not be acquiring"
           << std::endl;
   }
 
@@ -477,7 +548,9 @@ namespace ursa
       transmit();
     }
     else
-      std::cout << "ERROR: bits must be between 12 and 8 bits" << std::endl;
+      std::cout
+          << "ERROR: Bits must be between 12 and 8 bits and the system must not be acquiring"
+          << std::endl;
   }
 
   void Interface::setRamp(int seconds) {
@@ -491,7 +564,9 @@ namespace ursa
       transmit();
     }
     else
-      std::cout << "ERROR: Ramp must be between 6 and 219 seconds" << std::endl;
+      std::cout
+          << "ERROR: Ramp must be between 6 and 219 seconds and the system must not be acquiring"
+          << std::endl;
   }
 
   void Interface::noRamp() {
@@ -500,6 +575,9 @@ namespace ursa
       tx_buffer_ << "p";
       transmit();
     }
+    else
+      std::cout << "ERROR: Acquiring. Stop acquiring to disable ramping of HV."
+          << std::endl;
   }
 
   void Interface::setAlarm0(bool enable) {
