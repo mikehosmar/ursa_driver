@@ -1,7 +1,7 @@
 /**
  The MIT License (MIT)
 
- \file      main.cpp
+ \file      ursa_example.cpp
  \authors   Mike Hosmar <mikehosmar@gmail.com>
  \copyright Copyright (c) 2015, Michael Hosmar, All rights reserved.
 
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
   std::string port = "/dev/pts/4";
   int32_t baud = 115200;
 
-  boost::array<unsigned int, 4096> array;
+  boost::array<uint32_t, 4096> array;
   std::ofstream myfile;
   myfile.open("sample_output.csv");
 
@@ -51,9 +51,11 @@ int main(int argc, char **argv) {
   //ursa->loadPrevSettings();
   ursa->setGain(70);
   ursa->setThresholdOffset(100);
+  ursa->setShapingTime(ursa::Interface::TIME1uS);
   ursa->setInput(ursa::Interface::INPUT1NEG);
   ursa->setRamp(6);
-  ursa->setVoltage(900); //use appropriate settings
+
+  ursa->setVoltage(900); //use appropriate settings*/
 
   if (GMmode)
   {
@@ -78,7 +80,7 @@ int main(int argc, char **argv) {
     ursa->read();      //one last read
     ursa->getSpectra(&array); //retrieve the spectra
 
-    for (boost::array<unsigned int, 4096>::iterator i = array.begin();
+    for (boost::array<uint32_t, 4096>::iterator i = array.begin();
         i != array.end(); i++)
     {
       myfile << boost::lexical_cast<std::string>(*i) << "," << std::endl; //fill the csv file

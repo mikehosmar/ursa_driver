@@ -32,8 +32,15 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/array.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/thread/lock_guard.hpp>
+
 #include <stdint.h>
 #include <queue>
+#include <iostream>
+#include <sstream>
+
+#include <serial/serial.h>
 
 namespace serial
 {
@@ -63,7 +70,7 @@ namespace ursa
     int voltage_;
 
     boost::mutex array_mutex_;
-    boost::array<uint, 4096> pulses_;
+    boost::array<uint32_t, 4096> pulses_;
 
     bool checkComms();
     void transmit();
@@ -75,7 +82,7 @@ namespace ursa
     ~Interface();
 
     void read();
-    void getSpectra(boost::array<unsigned int, 4096>* array);
+    void getSpectra(boost::array<uint32_t, 4096>* array);
     void clearSpectra();
 
     void connect();

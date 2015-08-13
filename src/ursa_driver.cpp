@@ -24,12 +24,7 @@
  SOFTWARE.
  */
 
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/thread/lock_guard.hpp>
-#include <serial/serial.h>
 #include <ursa_driver/ursa_driver.h>
-#include <iostream>
-#include <sstream>
 
 namespace ursa
 {
@@ -126,6 +121,7 @@ namespace ursa
 #endif
     processData();
   }
+
   void Interface::processData() {
 
     while (rx_buffer_.size() >= 3)
@@ -266,7 +262,10 @@ namespace ursa
       return (0);
     }
     else
-      std::cout << "ERROR: Either not aquiring or not in GM mode." << std::endl;
+    {
+      std::cout << "ERROR: Either not acquiring or not in GM mode." << std::endl;
+      return (0);
+    }
   }
 
   void Interface::stopVoltage() {
@@ -384,12 +383,15 @@ namespace ursa
     {
       tx_buffer_ << "r";
       transmit();
+      int seconds =1;
       //This sets HV so we need to wait for ramp
       std::string msg = serial_->read(max_line_length);
       while (!serial_->waitReadable())
       {
         tx_buffer_ << "B";
         transmit();
+        std::cout << "INFO: Ramping HV.  Approx. seconds elapsed: " << seconds << std::endl;
+        seconds++;
       }
       msg = serial_->read(max_line_length);
     }
@@ -421,12 +423,12 @@ namespace ursa
           << (uint8_t) (outVolts & 0xff);
       transmit();
       //calculate seconds for ramp then adjust for the loop taking 1.1 seconds
-            int seconds = (ramp_ * abs(voltage-voltage_) / 100) / 1.1;
+            int seconds = ((ramp_ * abs(voltage-voltage_) / 100) / 1.1)-1;
       // blocking call to serial to wait for responsiveness
       std::string msg = serial_->read(max_line_length);
       while (!serial_->waitReadable())
       {
-        std::cout << "INFO: Ramping HV to: " << voltage << " Aprox. Seconds Remaining: " << seconds
+        std::cout << "INFO: Ramping HV to: " << voltage << " Approx. Seconds Remaining: " << seconds
             << std::endl;
         seconds--;
         tx_buffer_ << "B";
