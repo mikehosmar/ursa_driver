@@ -198,8 +198,7 @@ namespace ursa
   void Interface::stopAcquire() {
     do
     {
-      if (serial_->available())
-        std::string ignored = serial_->read(max_line_length);
+      std::string ignored = serial_->read(max_line_length);
       tx_buffer_ << "R";
       transmit();
       usleep(500);

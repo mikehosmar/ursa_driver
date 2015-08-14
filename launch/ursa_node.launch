@@ -1,0 +1,19 @@
+<launch>
+
+    <node pkg="ursa_driver" type="ursa_node" name="ursa_node" respawn="true" output="screen">
+
+        <param name="port" value="/dev/ttyUSB0"/>
+        <param name="use_mcs_mode" value="true"/>
+        <param name="imeadiate_mode" value="true"/>
+
+        <param name="load_previous_settings" value="false"/>
+
+        <param name="high_voltage" value="900"/>
+        <param name="gain" value="70"/>
+        <param name="threshold" value="100"/>
+        <param name="shaping_time" value="1"/>
+        <param name="input_and_polarity" value="input1_negative"/>
+        <param name="ramping_time" value="6"/>
+    </node>
+
+</launch>

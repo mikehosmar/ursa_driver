@@ -60,15 +60,22 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "ursa_driver");
   ros::NodeHandle nh("~");
 
+
   if(!get_params(nh))
     return (-1);
 
   my_ursa = new ursa::Interface(port.c_str(), baud);
+  my_ursa->connect();
+  if (my_ursa->connected())
+    ROS_INFO("URSA Connected");
+  else
+    return (-1);
+
 
   if(GMmode)
     publisher = nh.advertise<ursa_driver::ursa_counts>("counts", 10);
   else
-    publisher = nh.advertise<ursa_driver::ursa_spectra>("counts", 10);
+    publisher = nh.advertise<ursa_driver::ursa_spectra>("spectra", 10);
 
   //service callback set
   ros::Timer timer = nh.createTimer(ros::Duration(1.0), timerCallback, false, false);
@@ -97,11 +104,13 @@ int main(int argc, char **argv) {
   }
 
   ros::spin();
-
+  my_ursa->stopAcquire();
+  my_ursa->setVoltage(0);
 }
 
 void timerCallback(const ros::TimerEvent& event)
 {
+  ROS_DEBUG("Hit timer callback.");
   ros::Time now = ros::Time::now();
   if(GMmode)
   {
@@ -179,7 +188,7 @@ int get_params(ros::NodeHandle nh){
     nh.param<std::string>("port", port, "/dev/ttyUSB0");
     nh.param("baud", baud, 115200);
 
-    nh.param("use_MCS_mode", GMmode, false);
+    nh.param("use_mcs_mode", GMmode, false);
     nh.param("imeadiate_mode", imeadiate, false);
     return(1);
 }
