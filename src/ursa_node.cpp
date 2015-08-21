@@ -28,10 +28,11 @@
 #include "ros/ros.h"
 #include "ursa_driver/ursa_counts.h"
 #include "ursa_driver/ursa_spectra.h"
+#include "std_srvs/Empty.h"
 #include <std_msgs/String.h>
 
 int32_t baud;
-std::string port ="";
+std::string port = "";
 
 int HV = 0;
 double gain = 0;
@@ -52,16 +53,22 @@ bool imeadiate;
 void fill_maps();
 int get_params(ros::NodeHandle nh);
 void timerCallback(const ros::TimerEvent& event);
+bool startAcquireCB(std_srvs::Empty::Request& request,
+                    std_srvs::Empty::Response& response);
+bool stopAcquireCB(std_srvs::Empty::Request& request,
+                   std_srvs::Empty::Response& response);
+bool clearSpectraCB(std_srvs::Empty::Request& request,
+                    std_srvs::Empty::Response& response);
 
 ursa::Interface * my_ursa;
 ros::Publisher publisher;
+ros::Timer timer;
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ursa_driver");
   ros::NodeHandle nh("~");
 
-
-  if(!get_params(nh))
+  if (!get_params(nh))
     return (-1);
 
   my_ursa = new ursa::Interface(port.c_str(), baud);
@@ -71,16 +78,20 @@ int main(int argc, char **argv) {
   else
     return (-1);
 
-
-  if(GMmode)
+  if (GMmode)
     publisher = nh.advertise<ursa_driver::ursa_counts>("counts", 10);
   else
     publisher = nh.advertise<ursa_driver::ursa_spectra>("spectra", 10);
 
-  //service callback set
-  ros::Timer timer = nh.createTimer(ros::Duration(1.0), timerCallback, false, false);
+  ros::ServiceServer startSrv = nh.advertiseService("startAcquire",
+                                                    startAcquireCB);
+  ros::ServiceServer stopSrv = nh.advertiseService("stopAcquire",
+                                                   stopAcquireCB);
+  ros::ServiceServer spectraSrv = nh.advertiseService("clearSpectra",
+                                                      clearSpectraCB);
+  timer = nh.createTimer(ros::Duration(1.0), timerCallback, false, false);
 
-  if(load_prev)
+  if (load_prev)
   {
     my_ursa->loadPrevSettings();
   }
@@ -94,9 +105,9 @@ int main(int argc, char **argv) {
     my_ursa->setVoltage(HV);
   }
 
-  if(imeadiate)
+  if (imeadiate)
   {
-    if(GMmode)
+    if (GMmode)
       my_ursa->startGM();
     else
       my_ursa->startAcquire();
@@ -108,11 +119,36 @@ int main(int argc, char **argv) {
   my_ursa->setVoltage(0);
 }
 
-void timerCallback(const ros::TimerEvent& event)
-{
+bool startAcquireCB(std_srvs::Empty::Request& request,
+                    std_srvs::Empty::Response& response) {
+  if (GMmode)
+    my_ursa->startGM();
+  else
+    my_ursa->startAcquire();
+  timer.start();
+  return (true);
+}
+
+bool stopAcquireCB(std_srvs::Empty::Request& request,
+                   std_srvs::Empty::Response& response) {
+  timer.stop();
+  if (GMmode)
+    my_ursa->stopGM();
+  else
+    my_ursa->stopAcquire();
+  return (true);
+}
+
+bool clearSpectraCB(std_srvs::Empty::Request& request,
+                    std_srvs::Empty::Response& response) {
+  my_ursa->clearSpectra();
+  return (true);
+}
+
+void timerCallback(const ros::TimerEvent& event) {
   ROS_DEBUG("Hit timer callback.");
   ros::Time now = ros::Time::now();
-  if(GMmode)
+  if (GMmode)
   {
     ursa_driver::ursa_counts temp;
     temp.header.stamp = now;
@@ -129,68 +165,68 @@ void timerCallback(const ros::TimerEvent& event)
   }
 }
 
-int get_params(ros::NodeHandle nh){
+int get_params(ros::NodeHandle nh) {
   nh.param("load_previous_settings", load_prev, false);
 
-    if (!load_prev)
+  if (!load_prev)
+  {
+    if (!nh.getParam("high_voltage", HV))
     {
-      if (!nh.getParam("high_voltage", HV))
-      {
-        ROS_ERROR("High voltage must be set.");
-        return (-1);
-      }
-      if (!nh.getParam("gain", gain))
-      {
-        ROS_ERROR("Gain must be set.");
-        return (-1);
-      }
-      if (!nh.getParam("threshold", threshold))
-      {
-        ROS_ERROR("Threshold must be set.");
-        return (-1);
-      }
-      if (!nh.getParam("shaping_time", shaping_time))
-      {
-        ROS_ERROR("Shaping time must be set.");
-        return (-1);
-      }
-      if (!nh.getParam("input_and_polarity", input_polarity))
-      {
-        ROS_ERROR("Input and Polartity must be set.");
-        return (-1);
-      }
-      if (!nh.getParam("ramping_time", ramp))
-      {
-        ROS_ERROR("Ramping time must be set.");
-        return (-1);
-      }
-
-      fill_maps();
-
-      if (shape_map.find(shaping_time) == shape_map.end())
-      {
-        ROS_ERROR("Shaping time must be valid. Input as double in microseconds.");
-        return (-1);
-      }
-
-      if (input_map.find(input_polarity) == input_map.end())
-      {
-        ROS_ERROR(
-            "Input and polarity must be valid. Input as string in the format \"intput1_negative\""
-            " if using a pre-shaped positive input \"shaped_input\".");
-        return (-1);
-      }
-
-      real_shaping_time = shape_map[shaping_time];
-      real_input = input_map[input_polarity];
+      ROS_ERROR("High voltage must be set.");
+      return (-1);
+    }
+    if (!nh.getParam("gain", gain))
+    {
+      ROS_ERROR("Gain must be set.");
+      return (-1);
+    }
+    if (!nh.getParam("threshold", threshold))
+    {
+      ROS_ERROR("Threshold must be set.");
+      return (-1);
+    }
+    if (!nh.getParam("shaping_time", shaping_time))
+    {
+      ROS_ERROR("Shaping time must be set.");
+      return (-1);
+    }
+    if (!nh.getParam("input_and_polarity", input_polarity))
+    {
+      ROS_ERROR("Input and Polartity must be set.");
+      return (-1);
+    }
+    if (!nh.getParam("ramping_time", ramp))
+    {
+      ROS_ERROR("Ramping time must be set.");
+      return (-1);
     }
 
-    nh.param<std::string>("port", port, "/dev/ttyUSB0");
-    nh.param("baud", baud, 115200);
+    fill_maps();
 
-    nh.param("use_GM_mode", GMmode, false);
-    nh.param("imeadiate_mode", imeadiate, false);
-    return(1);
+    if (shape_map.find(shaping_time) == shape_map.end())
+    {
+      ROS_ERROR("Shaping time must be valid. Input as double in microseconds.");
+      return (-1);
+    }
+
+    if (input_map.find(input_polarity) == input_map.end())
+    {
+      ROS_ERROR(
+          "Input and polarity must be valid. Input as string in the format \"intput1_negative\""
+          " if using a pre-shaped positive input \"shaped_input\".");
+      return (-1);
+    }
+
+    real_shaping_time = shape_map[shaping_time];
+    real_input = input_map[input_polarity];
+  }
+
+  nh.param<std::string>("port", port, "/dev/ttyUSB0");
+  nh.param("baud", baud, 115200);
+
+  nh.param("use_GM_mode", GMmode, false);
+  nh.param("imeadiate_mode", imeadiate, false);
+  return (1);
 }
 
 void fill_maps() {

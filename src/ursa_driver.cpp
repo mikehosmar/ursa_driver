@@ -203,7 +203,7 @@ namespace ursa
   void Interface::stopAcquire() {
     do
     {
-      std::string ignored = serial_->read(max_line_length);
+      std::string ignored = serial_->read(128);
       tx_buffer_ << "R";
       transmit();
       usleep(500);
@@ -396,7 +396,7 @@ namespace ursa
 //  void Interface::setMaxHV(int HV) {
 //    if (!acquiring_ && HV >= 0 && HV <= 10000)
 //    {
-//      tx_buffer_ << "t";
+//      tx_buffer_ << "???";  //character not actually known.
 //      transmit();
 //      tx_buffer_ << char(HV >> 8) << char(HV & 0xFF);
 //      transmit();
