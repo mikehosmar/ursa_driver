@@ -50,6 +50,24 @@ namespace serial
 namespace ursa
 {
 
+  enum inputs
+  {
+    INPUT1NEG = 0, INPUT1POS, INPUT2NEG, INPUT2POS, INPUTXPOS //INPUTXPOS either input positive
+                                                              //pre-shaped pulse
+  };
+
+  enum shaping_time
+  {
+    TIME0_25uS = 0,
+    TIME0_5uS,
+    TIME1uS,
+    TIME2uS,
+    TIME4uS,
+    TIME6uS,
+    TIME8uS,
+    TIME10uS
+  };
+
   class Interface
   {
 
@@ -64,7 +82,7 @@ namespace ursa
     std::stringstream tx_buffer_;
     std::deque<uint8_t> rx_buffer_;
 
-    float battV;
+    float battV_;
 
     int ramp_;
     int voltage_;
@@ -110,6 +128,7 @@ namespace ursa
 
     void stopVoltage();
     void requestBatt(); //can be active
+    float getBatt();
 
     void startASCII();
     void stopASCII();
@@ -120,23 +139,6 @@ namespace ursa
     void setSmudgeFactor(int smudge);  //Factory only
     void setMaxHV(int HV);
 #endif
-    enum inputs
-    {
-      INPUT1NEG = 0, INPUT1POS, INPUT2NEG, INPUT2POS, INPUTXPOS //INPUTXPOS either input positive
-                                                                //pre-shaped pulse
-    };
-
-    enum shaping_time
-    {
-      TIME0_25uS = 0,
-      TIME0_5uS,
-      TIME1uS,
-      TIME2uS,
-      TIME4uS,
-      TIME6uS,
-      TIME8uS,
-      TIME10uS
-    };
 
     void loadPrevSettings();
     void setNoSave();  //dont save HV to EEPROM

@@ -32,7 +32,7 @@ namespace ursa
 
   Interface::Interface(const char *port, int baud) :
       port_(port), baud_(baud), connected_(false), serial_(NULL), acquiring_(
-          false), responsive_(false), gmMode_(false), battV(0), ramp_(6), voltage_(
+          false), responsive_(false), gmMode_(false), battV_(0), ramp_(6), voltage_(
           0) {
     pulses_.fill(0);
   }
@@ -117,7 +117,7 @@ namespace ursa
     }
 #ifdef DEBUG_
     std::cout << "DEBUG: Receive buffer size: " << rx_buffer_.size()
-        << std::endl;
+    << std::endl;
 #endif
     processData();
   }
@@ -147,8 +147,8 @@ namespace ursa
           boost::lock_guard<boost::mutex> lock(array_mutex_);
 #ifdef DEBUG_
           std::cout << "DEBUG: Incrementing Bin: "
-              << boost::lexical_cast<std::string>(energy) << " By amount: "
-              << boost::lexical_cast<std::string>(count >> 2) << std::endl;
+          << boost::lexical_cast<std::string>(energy) << " By amount: "
+          << boost::lexical_cast<std::string>(count >> 2) << std::endl;
 #endif
           pulses_[energy] += (count >> 2); //I think the docs were wrong and this is the correct method
         }       //this will increment by the highest 4 bits of the original 16
@@ -179,7 +179,12 @@ namespace ursa
   }
 
   void Interface::processBatt(uint16_t input) {
-    battV = input * 12 / 1024;
+    battV_ = (float) input * 12 / 1024;
+
+#ifdef DEBUG_
+    std::cout << "DEBUG: Battery voltage processed: "
+    << boost::lexical_cast<std::string>(battV_) << std::endl;
+#endif
   }
 
   bool Interface::checkComms() {
@@ -262,7 +267,8 @@ namespace ursa
     }
     else
     {
-      std::cout << "ERROR: Either not acquiring or not in GM mode." << std::endl;
+      std::cout << "ERROR: Either not acquiring or not in GM mode."
+          << std::endl;
       return (0);
     }
   }
@@ -275,6 +281,31 @@ namespace ursa
   void Interface::requestBatt() {
     tx_buffer_ << "B";
     transmit();
+    if (!acquiring_ || gmMode_)
+    {
+      uint8_t gm = (gmMode_ ? 1 : 0);
+      serial_->waitReadable();
+      if (serial_->available() <= (2 + gm))
+      {
+        uint8_t temp_buffer[3];
+        uint8_t count = serial_->read(temp_buffer, 2 + gm);
+        if (count == (2 + gm))
+        {
+          processBatt(
+              ((uint16_t) temp_buffer[0 + gm] << 8)
+                  | ((uint16_t) temp_buffer[1 + gm]));
+          return;
+        }
+      }
+      else
+      {
+        std::cout << "ERROR: Failed to process Batt. voltage." << std::endl;
+      }
+    }
+  }
+
+  float Interface::getBatt() {
+    return (battV_);
   }
 
   void Interface::startASCII() {
@@ -362,19 +393,19 @@ namespace ursa
   }
 
   //This function must NOT be used
-  void Interface::setMaxHV(int HV) {
-    if (!acquiring_ && HV >= 0 && HV <= 10000)
-    {
-      tx_buffer_ << "t";
-      transmit();
-      tx_buffer_ << char(HV >> 8) << char(HV & 0xFF);
-      transmit();
-      sleep(3);
-    }
-    else
-      std::cout << "ERROR: Acquiring. Stop acquiring to change max HV."
-          << std::endl;
-  }
+//  void Interface::setMaxHV(int HV) {
+//    if (!acquiring_ && HV >= 0 && HV <= 10000)
+//    {
+//      tx_buffer_ << "t";
+//      transmit();
+//      tx_buffer_ << char(HV >> 8) << char(HV & 0xFF);
+//      transmit();
+//      sleep(3);
+//    }
+//    else
+//      std::cout << "ERROR: Acquiring. Stop acquiring to change max HV."
+//          << std::endl;
+//  }
 #endif
 
   void Interface::loadPrevSettings() {
@@ -382,14 +413,15 @@ namespace ursa
     {
       tx_buffer_ << "r";
       transmit();
-      int seconds =1;
+      int seconds = 1;
       //This sets HV so we need to wait for ramp
       std::string msg = serial_->read(max_line_length);
       while (!serial_->waitReadable())
       {
         tx_buffer_ << "B";
         transmit();
-        std::cout << "INFO: Ramping HV.  Approx. seconds elapsed: " << seconds << std::endl;
+        std::cout << "INFO: Ramping HV.  Approx. seconds elapsed: " << seconds
+            << std::endl;
         seconds++;
       }
       msg = serial_->read(max_line_length);
@@ -422,19 +454,19 @@ namespace ursa
           << (uint8_t) (outVolts & 0xff);
       transmit();
       //calculate seconds for ramp then adjust for the loop taking 1.1 seconds
-            int seconds = ((ramp_ * abs(voltage-voltage_) / 100) / 1.1)-1;
+      int seconds = ((ramp_ * abs(voltage - voltage_) / 100) / 1.1) - 1;
       // blocking call to serial to wait for responsiveness
       std::string msg = serial_->read(max_line_length);
       while (!serial_->waitReadable())
       {
-        std::cout << "INFO: Ramping HV to: " << voltage << " Approx. Seconds Remaining: " << seconds
-            << std::endl;
+        std::cout << "INFO: Ramping HV to: " << voltage
+            << " Approx. Seconds Remaining: " << seconds << std::endl;
         seconds--;
         tx_buffer_ << "B";
         transmit();
       }
       msg = serial_->read(max_line_length);
-      voltage_=voltage;
+      voltage_ = voltage;
     }
     else
       std::cout
@@ -447,41 +479,50 @@ namespace ursa
     {
       char coarse;
       uint8_t fine;
+      std::string coarse_str;
       if (gain < 2)
       {
         coarse = '0';
         fine = round((gain / 2) * 256 - 1);
+        coarse_str = "2";
       }
       else if (gain < 4)
       {
         coarse = '1';
         fine = round((gain / 4) * 256 - 1);
+        coarse_str = "4";
       }
       else if (gain < 15)
       {
         coarse = '2';
         fine = round((gain / 15) * 256 - 1);
+        coarse_str = "15";
       }
       else if (gain < 35)
       {
         coarse = '3';
         fine = round((gain / 35) * 256 - 1);
+        coarse_str = "35";
       }
       else if (gain < 125)
       {
         coarse = '4';
         fine = round((gain / 125) * 256 - 1);
+        coarse_str = "125";
       }
       else if (gain < 250)
       {
         coarse = '5';
         fine = round((gain / 250) * 256 - 1);
+        coarse_str = "250";
       }
       else
       {
         std::cout << "ERROR: Gain must be bellow 250x" << std::endl;
         return;
       }
+
+      std::cout << "INFO: Setting coarse gain to: " << coarse_str << std::endl;
 
       double confirmGain = ((double(fine) + 1) / 256);
       std::cout << "INFO: Setting fine gain to: "

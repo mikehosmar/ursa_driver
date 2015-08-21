@@ -29,7 +29,7 @@
 #include <fstream>
 
 int main(int argc, char **argv) {
-  std::string port = "/dev/pts/4";
+  std::string port = "/dev/pts/14";
   int32_t baud = 115200;
 
   boost::array<uint32_t, 4096> array;
@@ -48,14 +48,16 @@ int main(int argc, char **argv) {
     return (-1);
 
   ursa->requestSerialNumber();
+  ursa->requestBatt();
+  std::cout << "Ursa Batt. voltage: " << boost::lexical_cast<std::string>(ursa->getBatt()) <<std::endl;
   //ursa->loadPrevSettings();
   ursa->setGain(70);
   ursa->setThresholdOffset(100);
-  ursa->setShapingTime(ursa::Interface::TIME1uS);
-  ursa->setInput(ursa::Interface::INPUT1NEG);
+  ursa->setShapingTime(ursa::TIME1uS);
+  ursa->setInput(ursa::INPUT1NEG);
   ursa->setRamp(6);
 
-  ursa->setVoltage(900); //use appropriate settings*/
+  ursa->setVoltage(900); //use appropriate settings
 
   if (GMmode)
   {
@@ -63,6 +65,8 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 30; i++)
     {
       std::cout << "Approx CPS: " << ursa->requestCounts() << std::endl; //number of counts since last read
+      ursa->requestBatt();
+      std::cout << "Ursa Batt. voltage: " << boost::lexical_cast<std::string>(ursa->getBatt()) <<std::endl;
       sleep(1); //Terrible way to get 1Hz (actual rate on my pc ~.8 Hz)
     }
     ursa->stopGM();
@@ -74,6 +78,8 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 90; i++) //~90 seconds
     {
       ursa->read();  //process incoming data
+      ursa->requestBatt();
+      std::cout << "Ursa Batt. voltage: " << boost::lexical_cast<std::string>(ursa->getBatt()) <<std::endl;
       sleep(1);
     }
     ursa->stopAcquire(); //stop acquiring

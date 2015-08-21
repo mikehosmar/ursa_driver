@@ -37,13 +37,13 @@ int HV = 0;
 double gain = 0;
 int threshold = 0;
 double shaping_time = 1;
-ursa::Interface::shaping_time real_shaping_time;
+ursa::shaping_time real_shaping_time;
 std::string input_polarity = "";
-ursa::Interface::inputs real_input;
+ursa::inputs real_input;
 int ramp = 6;
 
-std::map<double, ursa::Interface::shaping_time> shape_map;
-std::map<std::string, ursa::Interface::inputs> input_map;
+std::map<double, ursa::shaping_time> shape_map;
+std::map<std::string, ursa::inputs> input_map;
 
 bool load_prev;
 bool GMmode;
@@ -188,25 +188,25 @@ int get_params(ros::NodeHandle nh){
     nh.param<std::string>("port", port, "/dev/ttyUSB0");
     nh.param("baud", baud, 115200);
 
-    nh.param("use_mcs_mode", GMmode, false);
+    nh.param("use_GM_mode", GMmode, false);
     nh.param("imeadiate_mode", imeadiate, false);
     return(1);
 }
 
 void fill_maps() {
-  shape_map[0.25] = ursa::Interface::TIME0_25uS;
-  shape_map[0.5] = ursa::Interface::TIME0_5uS;
-  shape_map[1] = ursa::Interface::TIME1uS;
-  shape_map[2] = ursa::Interface::TIME2uS;
-  shape_map[4] = ursa::Interface::TIME4uS;
-  shape_map[6] = ursa::Interface::TIME6uS;
-  shape_map[8] = ursa::Interface::TIME8uS;
-  shape_map[10] = ursa::Interface::TIME10uS;
+  shape_map[0.25] = ursa::TIME0_25uS;
+  shape_map[0.5] = ursa::TIME0_5uS;
+  shape_map[1] = ursa::TIME1uS;
+  shape_map[2] = ursa::TIME2uS;
+  shape_map[4] = ursa::TIME4uS;
+  shape_map[6] = ursa::TIME6uS;
+  shape_map[8] = ursa::TIME8uS;
+  shape_map[10] = ursa::TIME10uS;
 
-  input_map["input1_negative"] = ursa::Interface::INPUT1NEG;
-  input_map["input1_positive"] = ursa::Interface::INPUT1POS;
-  input_map["input2_negative"] = ursa::Interface::INPUT2NEG;
-  input_map["input2_positive"] = ursa::Interface::INPUT1POS;
-  input_map["shaped_input"] = ursa::Interface::INPUTXPOS;
+  input_map["input1_negative"] = ursa::INPUT1NEG;
+  input_map["input1_positive"] = ursa::INPUT1POS;
+  input_map["input2_negative"] = ursa::INPUT2NEG;
+  input_map["input2_positive"] = ursa::INPUT1POS;
+  input_map["shaped_input"] = ursa::INPUTXPOS;
 }
 
