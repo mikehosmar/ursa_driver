@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   serial
   std_msgs
+  std_srvs
   message_generation
 )
 
@@ -83,7 +84,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ursa_driver
-  CATKIN_DEPENDS roscpp serial message_runtime
+  CATKIN_DEPENDS roscpp serial message_runtime std_msgs std_srvs
 #  DEPENDS system_lib
 )
 

@@ -1,9 +1,9 @@
-/**
- The MIT License (MIT)
-
+/** ROS Node implementation of the ursa_driver package.
  \file      ursa_node.cpp
  \authors   Mike Hosmar <mikehosmar@gmail.com>
  \copyright Copyright (c) 2015, Michael Hosmar, All rights reserved.
+
+ The MIT License (MIT)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

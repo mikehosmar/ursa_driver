@@ -1,9 +1,9 @@
-/**
- The MIT License (MIT)
-
+/** Implementation of the ursa::Interface class.
  \file      ursa_driver.cpp
  \authors   Mike Hosmar <mikehosmar@gmail.com>
  \copyright Copyright (c) 2015, Michael Hosmar, All rights reserved.
+
+ The MIT License (MIT)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -187,6 +187,11 @@ namespace ursa
 #endif
   }
 
+  /**
+   * This function requires that the serial port be already opened.
+   * It sends a "U" and the correct response from the Ursa is URSA2.
+   * If this is what is received the function responds true otherwise it returns false.
+   */
   bool Interface::checkComms() {
     stopAcquire();
     serial_->flush();
