@@ -30,6 +30,7 @@ namespace ursa
 {
   const size_t max_line_length(64);
 
+  //! All private variables are initialized to zero or there initial values. The pulses_ array is filled with zeros.
   Interface::Interface(const char *port, int baud) :
       port_(port), baud_(baud), connected_(false), serial_(NULL), acquiring_(
           false), responsive_(false), gmMode_(false), battV_(0), ramp_(6), voltage_(
@@ -37,11 +38,25 @@ namespace ursa
     pulses_.fill(0);
   }
 
+  /** Stops acquire mode and immediately disables voltage if still enabled.
+   * @todo In practice this doesn't work. The serial port is probably destroyed first.
+   */
   Interface::~Interface() {
     tx_buffer_ << "R" << "v";
     transmit();
   }
-
+  /**
+   * This function first creates a new serial object. Then sets the timeout, port and baud rate.
+   * The timeout is a global attribute for the serial port. Changing it will change the behavior of waitReadable
+   * and therefore the function of many of the Interfaces functions.
+   *
+   * The function then tries 5 times to open the port and if successful it sends a stop acquire command down the line
+   * then checks to see that the port is still open. If this is successful Interface::connected_ is set to true
+   *
+   * It then tries calling checkComms 5 times. If this is successful Interface::responsive_ is set to true.
+   *
+   * If either fail an error is writen to cout.
+   */
   void Interface::connect() {
     if (!serial_)
       serial_ = new serial::Serial();
@@ -93,6 +108,11 @@ namespace ursa
     std::cout << "ERROR: Unable to communicate with URSA" << std::endl;
   }
 
+  /**
+   * This function writes the whole output buffer to the serial port as a string.
+   * It will write an error to cout if a serial timeout occurs.
+   * With DEBUG_ enabled it will write the buffer to std::cout.
+   */
   void Interface::transmit() {
 #ifdef DEBUG_
     std::cout << "DEBUG: Transmitting:" << tx_buffer_.str() << std::endl;
@@ -107,6 +127,14 @@ namespace ursa
     usleep(100000);  //for stability
   }
 
+  /**
+   * This uses a while loop to read a buffer of length max_line_length from the serial buffer.
+   * This is copied into the rx_buffer buffer.
+   *
+   * If DEBUG_ enable prints out the length of the rx_buffer after filling it.
+   *
+   * Commented out line will print the input buffer straight to cout.
+   */
   void Interface::read() {
     while (serial_->available())
     {
@@ -122,8 +150,19 @@ namespace ursa
     processData();
   }
 
+  /**
+   * This function processes incoming data in acquire mode.
+   * The spectra data comes in as 3 bytes starting with 0xFF then a 4 bit count and then 12 bits of energy.
+   * The 12 bit energy is used as an index for the Interface::pulses_ array which is incremented by the 4 bit count.
+   *
+   * If the top 6 bits of the second byte is 0 the data is 10bit battery data and can be treated as such.
+   * This function loops until there is less than 3 bytes in the receive buffer.
+   *
+   * If the first byte is not 0xFF then bytes are dropped until there is a 0xFF on the front of the buffer.
+   *
+   * If DEBUG_ is enabled then each increment of the pulses_ array is reported to std::cout.
+   */
   void Interface::processData() {
-
     while (rx_buffer_.size() >= 3)
     {
       if (rx_buffer_.front() == 0xff)
@@ -150,10 +189,10 @@ namespace ursa
           << boost::lexical_cast<std::string>(energy) << " By amount: "
           << boost::lexical_cast<std::string>(count >> 2) << std::endl;
 #endif
-          pulses_[energy] += (count >> 2); //I think the docs were wrong and this is the correct method
-        }       //this will increment by the highest 4 bits of the original 16
+          pulses_[energy] += (count >> 2);
+        }
       }
-      else      //the stream should start with a 0xFF for each read
+      else
       {
         std::cout << "ERROR: Read error, dropping chars:"
             << (int) rx_buffer_.front();
@@ -168,16 +207,27 @@ namespace ursa
     }
   }
 
+  /**
+   * The function uses a boost::lock_gaurd before copying to protect against multiple access errors.
+   * This should help in the future if multithreading is implemented.
+   */
   void Interface::getSpectra(boost::array<unsigned int, 4096>* array) {
     boost::lock_guard<boost::mutex> lock(array_mutex_);
     *array = pulses_;
   }
 
+  /**
+   * This function sets all elements in the pulses_ array to zero using a boost:lock_gaurd to prevent multiple access errors.
+   */
   void Interface::clearSpectra() {
     boost::lock_guard<boost::mutex> lock(array_mutex_);
     pulses_.fill(0);
   }
 
+  /** Called from processData().  The reading is multiplied by 12/1024 to get volts.
+   *
+   * @param input The 10 bit battery voltage data
+   */
   void Interface::processBatt(uint16_t input) {
     battV_ = (float) input * 12 / 1024;
 
@@ -248,6 +298,13 @@ namespace ursa
     gmMode_ = false;
   }
 
+  /**
+   * This function will only work in GM mode and while acquiring. The number of counts counted since the last time
+   * this function was called is returned via serial as 4 bytes.  This function then combines the 4 bytes into one 32 but number and returns the number.
+   *
+   * If the number of bytes in the serial buffer is not 4 an error is written to cout.
+   *
+   */
   uint32_t Interface::requestCounts() {
     if (gmMode_ && acquiring_)
     {
@@ -354,6 +411,11 @@ namespace ursa
     }
   }
 
+  /**
+   * This function is mainly used by the original software to
+   * determine the ratio for setting the high voltage.
+   * The max HV is almost always 2000.
+   */
   void Interface::requestMaxHV() {
     if (!acquiring_)
     {
@@ -370,7 +432,8 @@ namespace ursa
   }
 
 #ifdef ADMIN_
-  void Interface::setSerialNumber(int serial) {
+  void Interface::setSerialNumber(int serial)
+  {
     if (!acquiring_ && serial >= 200000 && serial <= 299999)
     {
       tx_buffer_ << "#";
@@ -380,21 +443,22 @@ namespace ursa
       sleep(3);
     }
     else
-      std::cout
-          << "ERROR: Serial must be between 200000 and 299999 and the system must not be acquiring."
-          << std::endl;
+    std::cout
+    << "ERROR: Serial must be between 200000 and 299999 and the system must not be acquiring."
+    << std::endl;
   }
 
-  void Interface::setSmudgeFactor(int smudge) {
+  void Interface::setSmudgeFactor(int smudge)
+  {
     if (!acquiring_ && smudge >= 0 && smudge <= 4)
     {
       tx_buffer_ << "X" << boost::lexical_cast<std::string>(smudge);
       transmit();
     }
     else
-      std::cout
-          << "ERROR: Smudge factor must be between 0 and 4 and the system must not be acquiring."
-          << std::endl;
+    std::cout
+    << "ERROR: Smudge factor must be between 0 and 4 and the system must not be acquiring."
+    << std::endl;
   }
 
   //This function must NOT be used

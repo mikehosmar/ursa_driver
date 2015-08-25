@@ -26,8 +26,8 @@
 
 #ifndef URSA_DRIVER_H_
 #define URSA_DRIVER_H_
-#undef DEBUG_
-#undef ADMIN_
+//#define DEBUG_
+//#define ADMIN_
 
 #include <boost/lexical_cast.hpp>
 #include <boost/array.hpp>
@@ -108,12 +108,9 @@ namespace ursa
      */
     bool checkComms();
 
-    //! \brief Private utility function for flushing the transmit buffer down the line.
-    void transmit();
-    //! \brief Private utility function which processes incoming data.
-    void processData();
-    //! \brief Private utility function which processes a battery voltage message if in acquire mode.
-    void processBatt(uint16_t input);
+    void transmit(); //!< \brief Private utility function for flushing the transmit buffer down the line.
+    void processData(); //!< \brief Private utility function which processes incoming data.
+    void processBatt(uint16_t input); //!< \brief Private utility function which processes a battery voltage message if in acquire mode.
 
   public:
     /**
@@ -122,20 +119,16 @@ namespace ursa
      * @param baud Baud rate to communicate to the Ursa with.
      */
     Interface(const char *port, int baud);
-    //! \brief Interface destructor.
-    ~Interface();
+    ~Interface(); //!< \brief Interface destructor.
 
-    //! \brief Utility function to flush the input buffer and process the data.
-    void read();
+    void read(); //!< \brief A utility function to flush the input buffer and process the data.
     /** \brief Access function which returns by reference a copy of the spectra data.
      * @param array The array to fill with spectra data.
      */
     void getSpectra(boost::array<uint32_t, 4096>* array);
-    //! \brief A utility function to clear the internal Interface::pulses_ array.
-    void clearSpectra();
+    void clearSpectra(); //!< \brief A utility function to clear the internal Interface::pulses_ array.
 
-    //! \brief Opens the serial port and attempts to confirm communication to the Ursa.
-    void connect();
+    void connect(); //!< \brief Opens the serial port and attempts to confirm communication to the Ursa.
     /** \brief A utility function to check the status of the connection to the Ursa.
      * @return Returns true if Interface::connected_ and Interface::responsive_ are true.
      *
@@ -158,44 +151,57 @@ namespace ursa
       return (acquiring_);
     }
 
-    //! \brief Instructs the Ursa to start acquiring.
-    void startAcquire();
-    //! \brief Instructs the Ursa to stop acquiring.
-    void stopAcquire();
+    void startAcquire(); //!< \brief Instructs the Ursa to start acquiring.
+    void stopAcquire(); //!< \brief Instructs the Ursa to stop acquiring.
 
-    //! \brief Instructs the Ursa to start acquiring in Gieger Muller mode.
-    void startGM();
-    //! \brief Instructs the Ursa to stop acquiring and to switch out of Geiger Muller Mode.
-    void stopGM();
+    void startGM(); //!< \brief Instructs the Ursa to start acquiring in Gieger Muller mode.
+    void stopGM(); //!< \brief Instructs the Ursa to stop acquiring and to switch out of Geiger Muller Mode.
     /** \brief In GM mode; Returns the number of counts since the last call to requestCounts().
      *
      * @return The number of counts as a unsigned 32 bit integer.
      */
     uint32_t requestCounts();
 
-    //! \brief Immediately sets High Voltage to zero.  This is not stored to EEPROM.
-    void stopVoltage();
-    //! \brief Sends a request to the Ursa to report the batteries voltage.
-    void requestBatt(); //can be active
-    /** \brief An access function which returns the last succesful battery voltage reading.
+    void stopVoltage(); //!< \brief Immediately sets High Voltage to zero.  This is not stored to EEPROM.
+
+    void requestBatt(); //!< \brief Sends a request to the Ursa to report the batteries voltage.
+    /** \brief An access function which returns the last successful battery voltage reading.
      * @return The battery voltage in volts as a float.
      */
     float getBatt();
 
-
+    /** \brief Instructs Ursa to run in ASCII mode.
+     *
+     * This driver can't process data in ASCII mode so this function is only included for completeness.
+     */
     void startASCII();
-    void stopASCII();
+    void stopASCII(); //!< \brief Switches Ursa out of ASCII mode.
+    /** \brief Requests the serial number of the connected Ursa.
+     *
+     * @return The serial number as a int.
+     */
     int requestSerialNumber();
-    void requestMaxHV();
-#ifdef ADMIN_
-    void setSerialNumber(int serial);  //Factory only
-    void setSmudgeFactor(int smudge);//Factory only
+
+    void requestMaxHV(); //!< \brief This is a utility function to request the maximum HV capable by the Ursa.
+#ifdef ADMIN_ // These functions should normally only be executed by factory personal.
+    /** \brief Sets the serial number of the connected Ursa.
+     * @param serial The new serial number as an int.
+     */
+    void setSerialNumber(int serial);
+    /** \brief Sets the smudge factor of the A/D converter.
+     * @param smudge The smudge factor as an int.
+     */
+    void setSmudgeFactor(int smudge);
+    /** \brief A function to set the Ursas internal register for max HV.
+     * This function should NOT be used. The actual instruction to accomplish this is still unknown.
+     * It is only assumed to be possible.
+     */
     void setMaxHV(int HV);
 #endif
 
-    void loadPrevSettings();
-    void setNoSave();  //dont save HV to EEPROM
-    void setVoltage(int voltage);  //EEPROM
+    void loadPrevSettings(); //!< \brief A function to load previously set settings from EEPROM.
+    void setNoSave(); //!< \brief This function instructs the Ursa to not save the next instructed HV to EEPROM.
+    void setVoltage(int voltage);
     void setGain(double gain); //EEPROM
     void setInput(inputs input); //EEPROM
     void setShapingTime(shaping_time time);  //EEPROM
