@@ -201,17 +201,25 @@ namespace ursa
 
     void loadPrevSettings(); //!< \brief A function to load previously set settings from EEPROM.
     void setNoSave(); //!< \brief This function instructs the Ursa to not save the next instructed HV to EEPROM.
-    void setVoltage(int voltage);
-    void setGain(double gain); //EEPROM
-    void setInput(inputs input); //EEPROM
-    void setShapingTime(shaping_time time);  //EEPROM
-    void setThresholdOffset(int mVolts);  //EEPROM
+    void setVoltage(int voltage); //!< \brief This function instructs the ursa to enable high voltage.
+    void setGain(double gain); //!< \brief This function will set the gain of the MCA.
+    void setInput(inputs input); //!< \brief This function sets the input and polarity of the ursa.
+    void setShapingTime(shaping_time time);  //!< \brief This function sets the shaping time of the ursa.
+    void setThresholdOffset(int mVolts);  //!< \brief This function sets the threshold and offset of the ursa.
 
-    void setBitMode(int bits);
-    void setRamp(int seconds);
-    void noRamp();
+    void setBitMode(int bits); //!< \brief This function sets the number of bits used for acquisition.
+    void setRamp(int seconds); //!< \brief This function will set the ramping time for the HV.
+    void noRamp(); //!< Disables ramping of high voltage.
 
+    /**
+     * Enables or disables alarm 0 output on the ursa.
+     * @param enable Enable or disable as a bool.
+     */
     void setAlarm0(bool enable);
+    /**
+     * Enables or disables alarm 1 output on the ursa.
+     * @param enable Enable or disabel as a bool.
+     */
     void setAlarm1(bool enable);
   };
 

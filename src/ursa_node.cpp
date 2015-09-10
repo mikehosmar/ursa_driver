@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
                                                    stopAcquireCB);
   ros::ServiceServer spectraSrv = nh.advertiseService("clearSpectra",
                                                       clearSpectraCB);
-  timer = nh.createTimer(ros::Duration(1.0), timerCallback, false, false);
+  timer = nh.createTimer(ros::Duration(1.0), timerCallback, false, false); //!< @todo look at createWallTimer
 
   if (load_prev)
   {

@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['setalarm0',['setAlarm0',['../classursa_1_1Interface.html#a3bdaa2bc6e3ef7c32b1d44ae4276b8a6',1,'ursa::Interface']]],
+  ['setalarm1',['setAlarm1',['../classursa_1_1Interface.html#ae249a3ade71bb9b8fd75d570e5e0b4e4',1,'ursa::Interface']]],
+  ['setbitmode',['setBitMode',['../classursa_1_1Interface.html#a4d98d461ed781547ec436ee0ff30aa42',1,'ursa::Interface']]],
+  ['setgain',['setGain',['../classursa_1_1Interface.html#a35103ec27b172d4160aaecf6a38d8861',1,'ursa::Interface']]],
+  ['setinput',['setInput',['../classursa_1_1Interface.html#aef321a683b681077849d5072d40c236b',1,'ursa::Interface']]],
+  ['setmaxhv',['setMaxHV',['../classursa_1_1Interface.html#af7206c2e762f39e351b1ef3d6279009c',1,'ursa::Interface']]],
+  ['setnosave',['setNoSave',['../classursa_1_1Interface.html#a44799fa28cff6e516a3f4711e9112944',1,'ursa::Interface']]],
+  ['setramp',['setRamp',['../classursa_1_1Interface.html#a8938e69705e739ccc181e78cbea6b760',1,'ursa::Interface']]],
+  ['setserialnumber',['setSerialNumber',['../classursa_1_1Interface.html#a57e3af973ddd0ead3dfa19e8a6398362',1,'ursa::Interface']]],
+  ['setshapingtime',['setShapingTime',['../classursa_1_1Interface.html#ae96d3be46364dcc99bc8f6a25c6c75db',1,'ursa::Interface']]],
+  ['setsmudgefactor',['setSmudgeFactor',['../classursa_1_1Interface.html#a813a2bd3447c268e3d7aae71289707ac',1,'ursa::Interface']]],
+  ['setthresholdoffset',['setThresholdOffset',['../classursa_1_1Interface.html#afbd34d357a0f182c932bc9d8309046b0',1,'ursa::Interface']]],
+  ['setvoltage',['setVoltage',['../classursa_1_1Interface.html#afb5e7a03735a074e2501ff804a73ca4a',1,'ursa::Interface']]],
+  ['startacquire',['startAcquire',['../classursa_1_1Interface.html#af72f50ba1e7a35605ea8c377c8648f16',1,'ursa::Interface']]],
+  ['startacquirecb',['startAcquireCB',['../ursa__node_8cpp.html#aaa671175d55e49b6a42d60998f28a533',1,'ursa_node.cpp']]],
+  ['startascii',['startASCII',['../classursa_1_1Interface.html#a04af02133b28a274926aff69ab03591c',1,'ursa::Interface']]],
+  ['startgm',['startGM',['../classursa_1_1Interface.html#a3a19ddb03ddd5f9214c978b73b66dbfe',1,'ursa::Interface']]],
+  ['stopacquire',['stopAcquire',['../classursa_1_1Interface.html#ad573b2320cb0ee472be153b6220896ad',1,'ursa::Interface']]],
+  ['stopacquirecb',['stopAcquireCB',['../ursa__node_8cpp.html#ac888399c50e1694d4537acf432b9b7e4',1,'ursa_node.cpp']]],
+  ['stopascii',['stopASCII',['../classursa_1_1Interface.html#a512285314624fe5e1d96146afb9914a6',1,'ursa::Interface']]],
+  ['stopgm',['stopGM',['../classursa_1_1Interface.html#a4076598e47b4dc25439b0144c43acd9b',1,'ursa::Interface']]],
+  ['stopvoltage',['stopVoltage',['../classursa_1_1Interface.html#a37e31e108dd7e32a0e11122c20d410e4',1,'ursa::Interface']]]
+];

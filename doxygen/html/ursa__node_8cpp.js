@@ -1,0 +1,28 @@
+var ursa__node_8cpp =
+[
+    [ "clearSpectraCB", "ursa__node_8cpp.html#ae31f4dfd7162c99542efbfda9d1b22c2", null ],
+    [ "fill_maps", "ursa__node_8cpp.html#a905aed69dfc089bedfe0bd8c40637159", null ],
+    [ "get_params", "ursa__node_8cpp.html#a98ea380eb700239b95f05ccabe385362", null ],
+    [ "main", "ursa__node_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627", null ],
+    [ "startAcquireCB", "ursa__node_8cpp.html#aaa671175d55e49b6a42d60998f28a533", null ],
+    [ "stopAcquireCB", "ursa__node_8cpp.html#ac888399c50e1694d4537acf432b9b7e4", null ],
+    [ "timerCallback", "ursa__node_8cpp.html#a24bdcba66416cef9136ee80eea5281bc", null ],
+    [ "baud", "ursa__node_8cpp.html#a73d752e8e2a092871ed55bf7220ba0c0", null ],
+    [ "gain", "ursa__node_8cpp.html#ac7b389a0254ed87600f959a5f6d58ab0", null ],
+    [ "GMmode", "ursa__node_8cpp.html#a2200488b4c28bf1bbfcf23f8e400bf8a", null ],
+    [ "HV", "ursa__node_8cpp.html#a94af18b590ced7340d726d15c2c63f0c", null ],
+    [ "imeadiate", "ursa__node_8cpp.html#a8af3620c821fd2a39cadf4561c374c81", null ],
+    [ "input_map", "ursa__node_8cpp.html#a10d19a6c80a751269522d792dec96e44", null ],
+    [ "input_polarity", "ursa__node_8cpp.html#a0e6a37abc17a0abb606a0a49b685ba31", null ],
+    [ "load_prev", "ursa__node_8cpp.html#af7a9865b1e585d6bfa8f05eb5b02f6a5", null ],
+    [ "my_ursa", "ursa__node_8cpp.html#aed05618e6ef25fcc534ef326360b74d5", null ],
+    [ "port", "ursa__node_8cpp.html#a0baa2a14fddc9486557407a0f5813b8f", null ],
+    [ "publisher", "ursa__node_8cpp.html#adde9f51ddf0fb5c82c57b4075b6e9400", null ],
+    [ "ramp", "ursa__node_8cpp.html#af935d26f9a417595be7c3a7763856fe8", null ],
+    [ "real_input", "ursa__node_8cpp.html#a904eff3cf3221400275a2367ee493e8f", null ],
+    [ "real_shaping_time", "ursa__node_8cpp.html#a8a0f9fd8e7ea5ff4e326a491c54f38ec", null ],
+    [ "shape_map", "ursa__node_8cpp.html#a3056dfe9930426ce32303369295be0f6", null ],
+    [ "shaping_time", "ursa__node_8cpp.html#aa8396b32fa5b4cb89de9319b39aa9139", null ],
+    [ "threshold", "ursa__node_8cpp.html#a686599473d8ce395e95619896d88d539", null ],
+    [ "timer", "ursa__node_8cpp.html#a1af69a7a981d134e50b99c87ba9b97ee", null ]
+];

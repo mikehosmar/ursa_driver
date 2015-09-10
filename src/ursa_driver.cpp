@@ -339,7 +339,12 @@ namespace ursa
     tx_buffer_ << "v";
     transmit();
   }
-
+  /**
+   * The battery voltage is reported to the driver differently depending on if the driver is in acquire mode.
+   * When not acquiring the battery voltage is updated immediately. When acquiring the voltage will be processed as part of the Interface::read() call.
+   *
+   * In either case to get the voltage see: Interface::getBatt.
+   */
   void Interface::requestBatt() {
     tx_buffer_ << "B";
     transmit();
@@ -432,6 +437,9 @@ namespace ursa
   }
 
 #ifdef ADMIN_
+  /**
+   * The new serial number must be between 200000 and 299999 and the system must not be in acquire mode.
+   */
   void Interface::setSerialNumber(int serial)
   {
     if (!acquiring_ && serial >= 200000 && serial <= 299999)
@@ -448,6 +456,9 @@ namespace ursa
     << std::endl;
   }
 
+  /**
+   * The smudge factor must be between 0 and 4.  This function is intended for use in production only.
+   */
   void Interface::setSmudgeFactor(int smudge)
   {
     if (!acquiring_ && smudge >= 0 && smudge <= 4)
@@ -477,6 +488,13 @@ namespace ursa
 //  }
 #endif
 
+  /**
+   * This will set the high voltage, gain, input and polarity, shaping time, and threshold and offset.
+   *
+   * This function will then wait for the ursa to become responsive after its call because the high voltage could be ramping.
+   *
+   * See: setVoltage().
+   */
   void Interface::loadPrevSettings() {
     if (!acquiring_)
     {
@@ -511,6 +529,19 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * This function will send a command to the ursa to enable high voltage.  The ursa will use the ramping time which must be set prior to calling this function.
+   * If no ramping time is set the high voltage will ramp as fast as it can.
+   *
+   * While the ursa is ramping it cannot respond to any command.  This function will block and wait till the ursa is responsive again.
+   * While it waits an approximation of the time remaining will be printed to std::cout.
+   *
+   * This function can only be called when not in acquire mode.
+   *
+   * This parameter is stored to EEPROM.
+   *
+   * @param voltage The voltage to ramp to as an int.
+   */
   void Interface::setVoltage(int voltage) {
     if (!acquiring_ && voltage >= 0 && voltage <= 2000)
     {
@@ -543,6 +574,14 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * This function takes a gain between 0 and 250 x and commands the ursa to adjust its internal gain.
+   *
+   * This function can only be used when not in acquire mode.
+   *
+   * This parameter is stored to EEPROM.
+   * @param gain the desired gain as a double
+   */
   void Interface::setGain(double gain) {
     if (!acquiring_)
     {
@@ -604,6 +643,15 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * This function takes in a ursa::inputs and commands the ursa to change its input and polarity.
+   * The input can be 1 or 2 positive or negative.  The input can also be either input with a preshaped pulse. See: ursa::INPUTXPOS.
+   *
+   * This function can only be used when not in acquire mode.
+   *
+   * This parameter is stored to EEPROM.
+   * @param input The desired input and polarity as a ursa:inputs.
+   */
   void Interface::setInput(inputs input) {
     if (!acquiring_)
     {
@@ -617,6 +665,15 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * This function takes a ursa::shaping_time and instructs the ursa to change its internal shaping time.
+   * A 1uS shaping time is appropriate for most sensors used with the ursa.
+   *
+   * This function can only be used when not in acquire mode.
+   *
+   * This parameter is stored to EEPROM.
+   * @param time The shaping time as an ursa::shaping_time
+   */
   void Interface::setShapingTime(shaping_time time) {
     if (!acquiring_)
     {
@@ -628,6 +685,15 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * This function takes in a threshold as millivolts and calculates the offset.  It then instructs the ursa to change its internal value.
+   * The voltage must be between 25 and 1024 mV.
+   *
+   * This function can only be used when not in acquire mode.
+   *
+   * This parameter is stored to EEPROM
+   * @param mVolts The threshold in millivolts as an int.
+   */
   void Interface::setThresholdOffset(int mVolts) {
     if (!acquiring_ && mVolts >= 25 && mVolts <= 1023)
     {
@@ -652,6 +718,12 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * The ursa can use between 8 and 12 bits of resolution for energy readings.  The power up condition of the usra is 12 bits.
+   *
+   * This function can only be used when not in acquire mode.
+   * @param bits The number of bits to use as an int.
+   */
   void Interface::setBitMode(int bits) {
     if (!acquiring_ && bits >= 8 && bits <= 12)
     {
@@ -664,6 +736,14 @@ namespace ursa
           << std::endl;
   }
 
+  /**
+   * This function will take in a ramping time in seconds per 100 volts. So that a ramp of 6 seconds to 900 volts will take 54 seconds.
+   * The time must be between 6 and 219 seconds.
+   *
+   * This function can only be used when not in acquire mode.
+   *
+   * @param seconds The ramping time in seconds as an int.
+   */
   void Interface::setRamp(int seconds) {
     if (!acquiring_ && seconds >= 6 && seconds <= 219)
     {
