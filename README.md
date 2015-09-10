@@ -1,4 +1,4 @@
-URSAII Driver  {#mainpage}
+URSAII Driver
 =============
 Version 0.1.0
 
