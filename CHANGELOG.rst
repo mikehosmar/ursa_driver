@@ -22,5 +22,5 @@ Change Log for ursa_driver package
 
 
 .. _`0.0.0`: https://github.com/mars-uoit/URSAII-Driver/commit/e1c2bf2
-.. _`0.0.1`: https://github.com/mars-uoit/URSAII-Driver/compare/0.0.1...e1c2bf2
+.. _`0.0.1`: https://github.com/mars-uoit/URSAII-Driver/compare/e1c2bf2...0.0.1
 .. _`0.1.0`: https://github.com/mars-uoit/URSAII-Driver/compare/0.0.1...0.1.0
