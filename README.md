@@ -1,6 +1,6 @@
 URSAII Driver  {#mainpage}
 =============
-Version 0.0.1
+Version 0.1.0
 
 This is a ROS Node and C++ driver for the URSAII multi-channel analyser (MCA).  The ROS node implements all the necessary commands to start taking readings from a radiation detector and publish them over ROS.  While the library implements all the available commands.
 
