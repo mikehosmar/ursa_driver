@@ -21,6 +21,6 @@ Change Log for ursa_driver package
 * Initial Commit
 
 
-.. _`0.0.0`: https://bitbucket.org/mikehosmar/ursaii-driver/commits/e1c2bf2
-.. _`0.0.1`: https://bitbucket.org/mikehosmar/ursaii-driver/branches/compare/0.0.1..e1c2bf2#commits
-.. _`0.1.0`: https://bitbucket.org/mikehosmar/ursaii-driver/branches/compare/0.1.0..0.0.1#commits
+.. _`0.0.0`: https://github.com/mars-uoit/URSAII-Driver/commit/e1c2bf2
+.. _`0.0.1`: https://github.com/mars-uoit/URSAII-Driver/compare/0.0.1...e1c2bf2
+.. _`0.1.0`: https://github.com/mars-uoit/URSAII-Driver/compare/0.0.1...0.1.0
