@@ -3,8 +3,8 @@
     <node pkg="ursa_driver" type="ursa_node" name="ursa_node" respawn="true" output="screen">
 
         <param name="port" value="/dev/ttyUSB0"/>
-        <param name="use_GM_mode" value="false"/>
-        <param name="imeadiate_mode" value="false"/>
+        <param name="use_GM_mode" value="true"/>
+        <param name="imeadiate_mode" value="true"/>
 
         <param name="load_previous_settings" value="false"/>
 
