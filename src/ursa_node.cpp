@@ -33,6 +33,7 @@
 
 int32_t baud;
 std::string port = "";
+std::string detector_frame = "";
 
 int HV = 0;
 double gain = 0;
@@ -152,6 +153,7 @@ void timerCallback(const ros::TimerEvent& event) {
   {
     ursa_driver::ursa_counts temp;
     temp.header.stamp = now;
+    temp.header.frame_id = detector_frame;
     temp.counts = my_ursa->requestCounts();
     publisher.publish(temp);
   }
@@ -159,6 +161,7 @@ void timerCallback(const ros::TimerEvent& event) {
   {
     ursa_driver::ursa_spectra temp;
     temp.header.stamp = now;
+    temp.header.frame_id = detector_frame;
     my_ursa->read();
     my_ursa->getSpectra(&temp.bins);
     publisher.publish(temp);
@@ -226,6 +229,7 @@ int get_params(ros::NodeHandle nh) {
 
   nh.param("use_GM_mode", GMmode, false);
   nh.param("imeadiate_mode", imeadiate, false);
+  nh.param<std::string>("detector_frame", detector_frame, "rad_link");
   return (1);
 }
 
