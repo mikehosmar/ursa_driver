@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>ursa_driver</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>ros package and c++ library to interface with the URSAII MCA</description>
 
   <maintainer email="michael.hosmar@uoit.net">Mike Hosmar</maintainer>
