@@ -3,7 +3,6 @@ Changelog for package ursa_driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-
 0.1.1 (2017-03-26)
 ------------------
 * `0.1.1`_ Diff
@@ -31,3 +30,4 @@ Changelog for package ursa_driver
 .. _`0.0.1`: https://github.com/mars-uoit/URSAII-Driver/compare/e1c2bf2...0.0.1
 .. _`0.1.0`: https://github.com/mars-uoit/URSAII-Driver/compare/0.0.1...0.1.0
 .. _`0.1.1`: https://github.com/mars-uoit/URSAII-Driver/compare/0.1.0...0.1.1
+
